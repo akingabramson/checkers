@@ -96,7 +96,6 @@ class Board
         cloned_board[row_num, col_num] = piece.clone
         cloned_board[row_num, col_num].location = [row_num, col_num]
         cloned_board[row_num, col_num].board = cloned_board
-        cloned_board[row_num, col_num].king = piece.king.clone
       end
     end
         
@@ -106,49 +105,49 @@ class Board
   #begin rescue end should really be in game loop
   def perform_moves(from, *to)
     fake_board = self.deep_dup
-    begin
-      to.each do |to_move|
-        if valid_move_seq?(fake_board, from, to)
-        perform_moves!(from, to)
-      end      
+    begin 
+      fake_board.do_each_move(from, to)
+      do_each_move(from, to)      
     rescue InvalidMoveError => e
       puts e.message
     end
   end
 
-  def valid_move_seq?(board, from, to)
-    board.perform_moves!(from, to)
-    return true
+    # 
+
+  def do_each_move(from, to)
+    can_slide = true
+    to.each do |to_move|
+      perform_moves!(from, to_move, can_slide)
+      from = to_move
+      can_slide = false
+    end
+
+    unless self[from[0], from[1]].add_jumps.empty?
+      raise InvalidMoveError.new("You didn't go far enough!")
+    end
   end
 
-  def perform_moves!(from, to)
+  def perform_moves!(from, to, can_slide)
     from_row, from_col = from
-    first_move = true
-    to.each do |to_loc|
-      to_row, to_col = to_loc
-      if !self[from_row, from_col].possible_moves.include?(to_loc)
-        raise InvalidMoveError.new("Can't move there!")
-      end
+    to_row, to_col = to
 
-      if self[from_row, from_col].add_jumps.include?(to_loc)
-        perform_jump(from_row, from_col, to_row, to_col)         
-        from_row, from_col = to_loc
-        first_move = false
-        #if move is a jump, make sure it doesn't slide afterwards
+    if !self[from_row, from_col].possible_moves.include?(to)
+      raise InvalidMoveError.new("Can't move to #{to}!")
+    end
 
+    if self[from_row, from_col].add_jumps.include?(to)
+      perform_jump(from_row, from_col, to_row, to_col)         
+    else
+      if can_slide
+        move_piece(from_row, from_col, to_row, to_col)
       else
-       #if it's a slide, make sure it's the first move
-        if first_move
-          move_piece(from_row, from_col, to_row, to_col)
-          break
-        else
-          raise InvalidMoveError.new("Can't slide after you've jumped!")
-        end
+        raise InvalidMoveError.new("Can't slide after you've jumped!")
       end
     end
 
-    unless self[from_row, from_col].add_jumps.empty?
-      raise InvalidMoveError.new("You didn't go far enough!")
+    if (to_row == 0||to_row == 7) && !self[to_row, to_col].is_king
+      self[to_row, to_col].is_king = true
     end
   end
 
@@ -159,9 +158,9 @@ class Board
   end
 
   def move_piece(from_row, from_col, to_row, to_col)
-     self[to_row, to_col] = self[from_row, from_col]
-     self[to_row, to_col].location = [to_row, to_col]
-     self[from_row, from_col] = nil
+    self[to_row, to_col] = self[from_row, from_col]
+    self[to_row, to_col].location = [to_row, to_col]
+    self[from_row, from_col] = nil
   end
 
 end
@@ -174,14 +173,16 @@ b = Board.new
 b[3,4] = Piece.new(:red, [3,4], b)
 b[2,5] = Piece.new(:black, [2,5], b)
 b[2,5].is_king = true
+
 b[5,2] = Piece.new(:red, [5,2], b)
 b[5,4] = Piece.new(:red, [5,4], b)
+b[4,3] = Piece.new(:black, [4,3], b)
 
 b[1,2] = Piece.new(:black, [1,2], b)
 
 b.display
-p b[2,5].possible_moves
-
+b.perform_moves([4,3],[6,1])
+b.display
 
 
 
