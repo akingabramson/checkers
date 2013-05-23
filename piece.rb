@@ -2,7 +2,7 @@ require 'colored'
 require 'debugger'
 
 class Piece
-  attr_accessor :color, :is_king, :location
+  attr_accessor :color, :is_king, :location, :board
 
   DIRECTIONS = {
     :black => 1,
@@ -42,17 +42,18 @@ class Piece
     possible_moves = []
     row, col = @location
     unless @is_king == true
-      possible_moves += add_moves(SLIDE_TRANSFORMS, row, col)
-      possible_moves += add_jumps(SLIDE_TRANSFORMS, row, col)
+      possible_moves += add_moves
+      possible_moves += add_jumps
     else
-      possible_moves += add_moves(KING_SLIDE_TRANSFORMS, row, col)
-      possible_moves += add_jumps(KING_SLIDE_TRANSFORMS, row, col)
+      possible_moves += add_moves(KING_SLIDE_TRANSFORMS)
+      possible_moves += add_jumps(KING_SLIDE_TRANSFORMS)
     end
     possible_moves
   end
 
-  def add_moves(transforms = SLIDE_TRANSFORMS, row = @location[0], col = @location[1])
+  def add_moves(transforms = SLIDE_TRANSFORMS)
     slides = []
+    row, col = @location
     transforms.each do |transform|
       drow = transform[0]*DIRECTIONS[@color]
       dcol = transform[1]
@@ -65,11 +66,13 @@ class Piece
     slides
   end
 
-  def add_enemy_spaces(transforms = SLIDE_TRANSFORMS, row = @location[0], col = @location[1])
+  def add_enemy_spaces(transforms = SLIDE_TRANSFORMS)
     #finds all spaces one away with opposite color
 
     #when refactoring, I'll try to combine with move_spaces into one method
     slides = []
+    row, col = @location
+
     transforms.each do |transform|
       drow = transform[0]*DIRECTIONS[@color]
       dcol = transform[1]
@@ -83,11 +86,15 @@ class Piece
   end
 
 
-  def add_jumps(slide_transforms = SLIDE_TRANSFORMS, row = @location[0], col = @location[1])
-    possible_jumps = []
-    #history?
+  def add_jumps(slide_transforms = SLIDE_TRANSFORMS)
+    if @is_king
+      slide_transforms = KING_SLIDE_TRANSFORMS
+    end
 
-    one_aways = add_enemy_spaces(slide_transforms, row, col)
+    possible_jumps = []
+    row, col = @location
+
+    one_aways = add_enemy_spaces(slide_transforms)
 
     until one_aways.empty?
       one_away = one_aways.shift
@@ -99,12 +106,8 @@ class Piece
       #if it's empty and on the board, it's a possible move
       if @board[new_row, new_col].nil? && @board.on_board?([new_row, new_col])
         possible_jumps << new_loc
-        row = new_row
-        col = new_col
-        one_aways += add_enemy_spaces(slide_transforms, new_row, new_col)
       end
     end
-
     possible_jumps
   end
 
