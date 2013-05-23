@@ -1,5 +1,26 @@
 require_relative "piece.rb"
 
+class Checkers
+  
+  def initialize
+    @colors = [:black, :red]
+  end
+
+  def human_v_human
+    @player1 = Human.new
+    @player2 = Human.new
+    @board = Board.new
+    play_loop
+  end
+
+  def play_loop
+    until @board.game_over?
+    end
+  end
+
+end
+
+
 class Board
   attr_accessor :rows
 
@@ -113,7 +134,6 @@ class Board
     end
   end
 
-    # 
 
   def do_each_move(from, to)
     can_slide = true
@@ -163,6 +183,26 @@ class Board
     self[from_row, from_col] = nil
   end
 
+  def game_over?
+    reds = false
+    blacks = false
+    @rows.each_with_index do |row, row_num|
+      row.each_with_index do |col, col_num|
+        next unless col
+        if col.color == :red
+          reds = true
+        else
+          blacks = true
+        end
+    end
+
+    if reds == false || blacks == false
+      return true
+    else
+      false
+    end
+  end
+
 end
 
 
@@ -182,7 +222,7 @@ b[1,2] = Piece.new(:black, [1,2], b)
 
 b.display
 b.perform_moves([4,3],[6,1])
-b.display
+p b.game_over?
 
 
 
