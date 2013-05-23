@@ -13,7 +13,6 @@ class Board
     rows2 = [0, 2, 6]
 
     @rows.each_with_index do |row, row_num|
-      p row_num
       if rows1.include?(row_num)
         set_every_other(row, row_num, 0)
       elsif rows2.include?(row_num)
@@ -26,13 +25,13 @@ class Board
     if row_num < 4
       row.each_with_index do |square, col_num|
         if col_num % 2 == remainder
-          self[row_num, col_num] = Piece.new(:black, [row_num, col_num])
+          self[row_num, col_num] = Piece.new(:black, [row_num, col_num], self)
         end
       end
     else
       row.each_with_index do |square, col_num|
         if col_num % 2 == remainder
-          self[row_num, col_num] = Piece.new(:red, [row_num, col_num])
+          self[row_num, col_num] = Piece.new(:red, [row_num, col_num], self)
         end
       end
     end
@@ -48,7 +47,7 @@ class Board
   end
 
   def top_row
-    puts "   0 1 2 3 4 5 6 7\n"
+    print "   0 1 2 3 4 5 6 7\n"
   end
 
   def display
@@ -80,4 +79,4 @@ end
 b = Board.new
 b.make_board
 b.display
-p b[0,1].location
+p b[2,1].possible_slides
