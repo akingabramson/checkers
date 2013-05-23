@@ -1,5 +1,5 @@
 require 'colored'
-
+require 'debugger'
 
 class Piece
   attr_accessor :color, :is_king, :location
@@ -8,11 +8,10 @@ class Piece
     :black => 1,
     :red => -1
   }
-  SLIDE_TRANSFORMS = [[1, 1], [1, -1]]
 
-  KING_SLIDE_TRANSFORMS = [
-    [1, 1], [1, -1], [-1, 1], [-1, -1]
-  ]
+  SLIDE_TRANSFORMS = [[1, 1], [1, -1]]
+  KING_SLIDE_TRANSFORMS = [[1, 1], [1, -1], [-1, 1], [-1, -1]]
+
 
   #make transformers constant
 
@@ -39,34 +38,77 @@ class Piece
     end
   end
 
-  def possible_slides
-    possible_slides = []
+  def possible_moves
+    possible_moves = []
     row, col = @location
     unless @is_king == true
-      possible_slides += add_slide(SLIDE_TRANSFORMS, row, col)
+      possible_moves += add_moves(SLIDE_TRANSFORMS, row, col)
+      possible_moves += add_jumps(SLIDE_TRANSFORMS, row, col)
     else
-      possible_slides += add_slide(KING_SLIDE_TRANSFORMS, row, col)
+      possible_moves += add_moves(KING_SLIDE_TRANSFORMS, row, col)
+      possible_moves += add_jumps(KING_SLIDE_TRANSFORMS, row, col)
     end
-    possible_slides
+    possible_moves
   end
 
-  def add_slide(constant, row, col)
+  def add_moves(transforms = SLIDE_TRANSFORMS, row = @location[0], col = @location[1])
     slides = []
-    constant.each do |transform|
+    transforms.each do |transform|
       drow = transform[0]*DIRECTIONS[@color]
       dcol = transform[1]
-      
+
       new_loc = [(row + drow), (col + dcol)]
-      if @board[(row + drow), (col + dcol)].nil?
+      if @board[(row + drow), (col + dcol)].nil? && @board.on_board?(new_loc)
         slides << new_loc
       end
     end
     slides
   end
 
-  def possible_jumps
+  def add_enemy_spaces(transforms = SLIDE_TRANSFORMS, row = @location[0], col = @location[1])
+    #finds all spaces one away with opposite color
 
+    #when refactoring, I'll try to combine with move_spaces into one method
+    slides = []
+    transforms.each do |transform|
+      drow = transform[0]*DIRECTIONS[@color]
+      dcol = transform[1]
+
+     new_loc = [(row + drow), (col + dcol)]
+      if !@board[(row + drow), (col + dcol)].nil? && @board[(row + drow), (col + dcol)].color != @color
+        slides << new_loc
+      end
+    end
+    slides
   end
+
+
+  def add_jumps(slide_transforms = SLIDE_TRANSFORMS, row = @location[0], col = @location[1])
+    possible_jumps = []
+    #history?
+
+    one_aways = add_enemy_spaces(slide_transforms, row, col)
+
+    until one_aways.empty?
+      one_away = one_aways.shift
+      one_row, one_col = one_away
+      new_row, new_col = [(2*one_row - row), (2*one_col - col)]
+      new_loc = [new_row, new_col]
+      #find location behind enemy spot
+
+      #if it's empty and on the board, it's a possible move
+      if @board[new_row, new_col].nil? && @board.on_board?([new_row, new_col])
+        possible_jumps << new_loc
+        row = new_row
+        col = new_col
+        one_aways += add_enemy_spaces(slide_transforms, new_row, new_col)
+      end
+    end
+
+    possible_jumps
+  end
+
+
   #takes in from array and to array
 
 end

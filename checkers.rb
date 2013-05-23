@@ -3,6 +3,9 @@ require_relative "piece.rb"
 class Board
   attr_accessor :rows
 
+  class InvalidMoveError < ArgumentError
+  end
+
   def initialize(rows = 8)
     @rows = Array.new(rows) {Array.new(rows)}
     nil
@@ -72,13 +75,82 @@ class Board
     nil
   end
 
+  def on_board?(location)
+    if location.any? {|loc| !(0..8).include?(loc)}
+      return false
+    else
+      true
+    end
+  end
+
+  def rows
+    @rows.map(&:dup)
+  end
+
+  def deep_dup
+    cloned_board = Board.new(rows)
+
+    cloned_board.rows.each_with_index do |row, row_num|
+      row.each_with_index do |piece, col_num|
+        next if piece.nil?
+        cloned_board[row_num, col_num] = piece.clone
+        cloned_board[row_num, col_num].location = piece.location.clone
+        cloned_board[row_num, col_num].board = cloned_board
+      end
+    end
+        
+    cloned_board
+  end
+
+  def perform_moves!(from, *to)
+    from_row, from_col = from
+
+    to.each do |to_loc|
+      to_row, to_col = to_loc
+      if !self[from_row, from_col].possible_moves.include?(to_loc)
+        raise InvalidMoveError.new("Can't move there!")
+        break
+      else
+        if self[from_row, from_col].add_jumps.include?(to_loc)
+          self[((from_row + to_row) / 2), ((from_col + to_col) / 2)] = nil
+        end
+        self[to_row, to_col] = self[from_row, from_col]
+        self[to_row, to_col].location = to_loc
+        self[from_row, from_col] = nil
+        from_row, from_col = to_loc
+      end
+    end
+
+    unless self[from_row, from_col].add_jumps.empty?
+      raise InvalidMoveError.new("You didn't go far enough!")
+    end
+
+    #check to to make sure it's the end of the road
+  end
+
 end
 
 
+#need to interpret "to" into array of arrays?
 
 b = Board.new
-b[2,1] = Piece.new(:black, [2,1], b)
-b[3,2] = Piece.new(:red, [3,2], b)
+
+b[3,4] = Piece.new(:red, [3,4], b)
+b[2,5] = Piece.new(:black, [2,5], b)
+b[5,2] = Piece.new(:red, [5,2], b)
+b[1,2] = Piece.new(:black, [1,2], b)
 
 b.display
-p b[3,2].possible_slides
+
+b.perform_moves!([2,5],[4,3],[6,1])
+b.display
+
+
+
+
+# b.display
+
+# p b[3,2].possible_moves
+# p b[4,3].possible_moves
+
+
