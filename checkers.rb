@@ -77,6 +77,8 @@ end
 
 
 b = Board.new
-b.make_board
+b[2,1] = Piece.new(:black, [2,1], b)
+b[3,2] = Piece.new(:red, [3,2], b)
+
 b.display
-p b[2,1].possible_slides
+p b[3,2].possible_slides
