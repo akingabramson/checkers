@@ -60,13 +60,13 @@ class Board
       row.each_with_index do |square, col_num|
         if (row_num - col_num).abs.odd?
           if square
-            print " #{square} ".black_on_blue
+            print "#{square}".black_on_blue
           else
-            print "   ".black_on_blue
+            print " ".black_on_blue
           end
-          print ""
+          print " "
         else
-          print "   "
+          print "  "
         end
       end
       puts " "
