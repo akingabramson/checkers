@@ -77,7 +77,9 @@ class Piece
       drow = transform[0]*DIRECTIONS[@color]
       dcol = transform[1]
 
-     new_loc = [(row + drow), (col + dcol)]
+      new_loc = [(row + drow), (col + dcol)]
+      next if !@board.on_board?(new_loc)
+
       if !@board[(row + drow), (col + dcol)].nil? && @board[(row + drow), (col + dcol)].color != @color
         slides << new_loc
       end
@@ -95,7 +97,7 @@ class Piece
     row, col = @location
 
     one_aways = add_enemy_spaces(slide_transforms)
-
+    p one_aways
     until one_aways.empty?
       one_away = one_aways.shift
       one_row, one_col = one_away
